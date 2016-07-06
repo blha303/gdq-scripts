@@ -1,0 +1,4 @@
+requests
+beautifulsoup
+praw
+ago

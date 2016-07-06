@@ -1,0 +1,16 @@
+<head>
+<link rel="stylesheet" type="text/css" href="jsonview-core.css" media="screen" />
+<link rel="stylesheet" type="text/css" href="jsonview.css" media="screen" />
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="background.js"></script>
+<script src="content.js"></script>
+<script src="workerFormatter.js"></script>
+<script src="workerJSONLint.js"></script>
+</head>
+<body>
+</body>
+<script>
+$.getJSON('./donations.json', function(json) {
+  $('body').html(jsonToHTML(json, null) + '<div class="toolbox"><a target="_blank" href="http://blha303.com.au/agdq/donations.json">View source</a></div>');
+});
+</script>
