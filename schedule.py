@@ -33,7 +33,7 @@ out = {"info": {"site": "http://gamesdonequick.com/schedule",
                 "script": "https://b303.me/gdq/schedule.py",
                 "raw": "https://b303.me/gdq/schedule.json",
                 "vods": "https://b303.me/gdq/vods.md",
-                "slug": "agdq2016",
+                "slug": "sgdq2016",
                 "header": "https://www.reddit.com/r/suudo/wiki/gdqheader"},
        "current": {},
        "schedule": []
