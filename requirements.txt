@@ -1,4 +1,4 @@
 requests
 beautifulsoup
-praw
+praw==3.5.0
 ago
