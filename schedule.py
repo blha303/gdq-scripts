@@ -1,13 +1,11 @@
 from requests import get
 from bs4 import BeautifulSoup as Soup
 import datetime as dt
-from json import dumps, load, loads
+from json import dumps, load, loads, dump
 from calendar import timegm
 from time import sleep
 from ago import human
 from sys import exit
-
-#from vods_agdq2016 import vods
 
 import praw
 r = praw.Reddit('VOD loader by /u/suudo')
@@ -17,23 +15,38 @@ with open("/home/sites/gdqauth.json") as f:
 r.set_oauth_app_info(**auth["login"])
 r.set_access_credentials(**r.refresh_access_information(auth["token"]))
 
-def load_json_from_reddit(subreddit, wikipage):
-    page = r.get_wiki_page(subreddit, wikipage).content_md
+def load_json_from_reddit(subreddit, wikipage, orempty=False):
+    """Reads json from a reddit wiki page. Allows the use of # as a comment character"""
+    try:
+        page = r.get_wiki_page(subreddit, wikipage).content_md
+    except praw.errors.NotFound:
+        if orempty:
+            return {}
+        raise
     return loads("\r\n".join([line.partition("#")[0].rstrip() for line in page.split("\r\n")]))
 
-vods = load_json_from_reddit("suudo", "sgdq2016vods")
+def dump_json_to_reddit(data, subreddit, wikipage):
+    """Dumps json to a reddit wiki page.
+    :param data: Arbitrary data that json.dumps can interpret
+    :param subreddit: Destination subreddit
+    :param wikipage: Destination wikipage"""
+    return r.get_wiki_page(subreddit, wikipage).edit("\r\n".join("    "+l for l in json.dumps(data, indent=4).split("\n")))
+
+vods = load_json_from_reddit("suudo", "agdq2017vods")
 urls = load_json_from_reddit("suudo", "gdqrunners")
+with open("srcomgames.json") as f:
+    games = load(f)
 
 out = {"info": {"site": "http://gamesdonequick.com/schedule",
                 "author": "blha303",
-                "email": "steven@b303.me",
+                "email": "stevensmith.ome+gdq@gmail.com",
                 "timezone": "UTC/GMT",
                 "generated": [dt.datetime.utcnow().ctime(), timegm(dt.datetime.utcnow().utctimetuple())],
                 "pretty": "https://b303.me/gdq/",
                 "script": "https://b303.me/gdq/schedule.py",
                 "raw": "https://b303.me/gdq/schedule.json",
                 "vods": "https://b303.me/gdq/vods.md",
-                "slug": "sgdq2016",
+                "slug": "agdq2017",
                 "header": "https://www.reddit.com/r/suudo/wiki/gdqheader"},
        "current": {},
        "schedule": []
@@ -52,8 +65,27 @@ def main():
         cols = row.findAll('td')
         if "class" in row.attrs:
             if "second-row" in row.attrs["class"]:
-                out["schedule"][-1]["runTime"] = cols[0].text.strip()
-                out["schedule"][-1]["category"] = cols[1].text.strip()
+                data = out["schedule"][-1]
+                data["runTime"] = cols[0].text.strip()
+                data["category"] = cols[1].text.strip()
+                api_url = "http://www.speedrun.com/api/v1"
+                if data["game"] in games:
+                    data["srcom"] = games[data["game"]]
+                else:
+                    resp = get(api_url + "/games", params={"name": data["game"], "embed": "categories"}).json()["data"]
+                    if resp:
+                        resp = {"id": resp[0]["id"], "categories": {i["name"]:i["id"] for i in resp[0]["categories"]["data"]}}
+                        games[data["game"]] = data["srcom"] = resp
+                    else:
+                        data["srcom"] = {}
+                        data["wr"] = []
+                if data["srcom"]:
+                    data["srcom_category"] = data["srcom"]["categories"].get(data["category"])
+                    if data["srcom_category"]:
+                        records = get(api_url + "/categories/{}/records".format(data["srcom_category"])).json()["data"]
+                        if records and records[0]["runs"]:
+                            wr = records[0]["runs"][0]["run"]
+                            data["wr"] = [wr["weblink"] if "weblink" in wr else None, wr["times"]["primary_t"]]
                 continue
             if "day-split" in row.attrs["class"]:
                 continue
@@ -81,7 +113,7 @@ def main():
                        (template_extra.format(3, *vods[n][4:6])
                          if len(vods[n]) > 4 else "")
                     if len(vods) > n else "http://twitch.tv/gamesdonequick")
-        if data["until"][:3] == "in " and not currentSet:
+        if data["until"][:3] == "in " and not currentSet and len(out["schedule"]) > 0:
             out["current"] = dict()
             out["current"]["game"] = out["schedule"][-1]
             out["current"]["since"] = human(dt.datetime.now() - dt.datetime.strptime(out["schedule"][0]["time"], "%Y-%m-%dT%H:%M:%SZ"))
@@ -89,18 +121,21 @@ def main():
             soup = Soup(get("https://gamesdonequick.com/tracker/index/{}".format(out["info"]["slug"])).text, "html.parser")
             out["current"]["donation"]["total"] = soup.find("small").text.strip().split("\n")[1].split(" ")[0]
             out["current"]["donation"]["maxavg"] = soup.find("small").text.strip().split("\n")[3]
-            twitchd = get("https://api.twitch.tv/kraken/streams/gamesdonequick").json()["stream"]
-            if twitchd:
-                out["current"]["viewers"] = twitchd["viewers"]
-            else:
+            try:
+                twitchd = get("https://api.twitch.tv/kraken/streams/gamesdonequick").json()["stream"]
+                if twitchd:
+                    out["current"]["viewers"] = twitchd["viewers"]
+                else:
+                    out["current"]["viewers"] = 0
+            except:
                 out["current"]["viewers"] = 0
             currentSet = True
         out["schedule"].append(data)
         n += 1
     with open('schedule.json', 'w') as f:
-        f.write(dumps(out))
-    with open('bak/schedule.json.' + dt.datetime.strftime(dt.datetime.now(), "%Y%m%d-%H%M"), 'w') as f:
-        f.write(dumps({'current': out["current"]}))
+        dump(out, f, indent=4)
+    with open("srcomgames.json", "w") as f:
+        dump(games, f)
 
 
 if __name__ == "__main__":
