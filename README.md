@@ -9,7 +9,8 @@ Setup
 Currently setting up automatic VOD thread updating is somewhat difficult, at least I'm assuming it is because I haven't had to do it from scratch before. The scripts use several reddit wiki pages as configuration and data input, this was so it could be easily crowd-sourced as I was losing interest in watching hours of video to update the thread myself. The wiki pages being accessed are:
 
 * [XgdqYYYYvods](https://reddit.com/r/suudo/wiki/agdq2017vods), a JSON list of value pairs representing a Twitch VOD url for each of the runs in the [schedule](https://gamesdonequick.com/schedule). This needs to be manually updated for each new year
-* [gdqrunners](https://reddit.com/r/suudo/wiki/gdqrunners), a mapping of usernames to their video URLs. needed because most runners use a slightly different username on the schedule to what they use on twitch
+* ~~[gdqrunners](https://reddit.com/r/suudo/wiki/gdqrunners), a mapping of usernames to their video URLs. needed because most runners use a slightly different username on the schedule to what they use on twitch~~
+  * No longer needed, https://gamesdonequick.com/tracker/search/?type=runner
 * [gdqvariables](https://www.reddit.com/r/suudo/wiki/gdqvariables), containing previously hard-coded values that are used in the creation of the vod thread. An initial effort at making the entire script configurable from reddit wiki pages
 * [gdqheader](https://www.reddit.com/r/suudo/wiki/gdqheader), text inserted at the top of the vod thread containing a brief statement from the author and relevant links
 
@@ -43,7 +44,8 @@ with open("gdqauth.json", "w") as f:
   * On line 12, change the path to gdqauth.json. Make sure it's not web accessible!
   * On line 35, update the name of the event and create the relevant wiki page
   * On line 40, edit the links if you like, make sure to change the event slug
-  * If the loop from line 63 down fails, GDQ has probably changed the schedule page again. You'll have to figure out how to work around their alterations.
+  * ~~If the loop from line 63 down fails, GDQ has probably changed the schedule page again. You'll have to figure out how to work around their alterations.~~
+    * No longer needed, https://gamesdonequick.com/tracker/search/?type=run&event=20
 
 * Edit `genvods.py`:
 

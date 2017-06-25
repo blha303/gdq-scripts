@@ -10,4 +10,4 @@ updatethread:
 	python3 updatethread.py
 
 requirements:
-	sudo pip install -r requirements.txt
+	pip install -r requirements.txt
