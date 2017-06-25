@@ -1,5 +1,4 @@
 from requests import get as _get
-from bs4 import BeautifulSoup as Soup
 import datetime as dt
 from json import dumps, load, loads, dump
 from calendar import timegm
