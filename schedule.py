@@ -52,8 +52,10 @@ out = {"info": {"site": "http://gamesdonequick.com/schedule",
 
 vods = load_json_from_reddit("suudo", out["info"]["slug"] + "vods")
 urls = load_json_from_reddit("suudo", "gdqrunners")
-runners = {r["pk"]:r["fields"] for r in get("https://gamesdonequick.com/tracker/search/?type=runner").json()}
-event = [e for e in get("https://gamesdonequick.com/tracker/search/?type=event").json() if e["fields"]["short"] == out["info"]["slug"]][0]
+with open("runners.json") as f:
+    runners = {r["pk"]:r["fields"] for r in load(f)}
+with open("events.json") as f:
+    event = [e for e in load(f) if e["fields"]["short"] == out["info"]["slug"]][0]
 with open("srcomgames.json") as f:
     games = load(f)
 
@@ -81,11 +83,13 @@ def get_srcom_info(data):
     else:
         resp = get(api_url + "/games", params={"name": data["game"], "embed": "categories"}).json().get("data")
         if resp:
-            resp = {"id": resp[0]["id"], "categories": {i["name"]:i["id"] for i in resp[0]["categories"]["data"]}}
+            resp = {"id": resp[0]["id"], "weblink": resp[0]["weblink"], "categories": {i["name"]:i["id"] for i in resp[0]["categories"]["data"]}}
         else:
             out["srcom"] = {}
             out["wr"] = []
-        games[data["game"]] = out["srcom"] = resp
+        if type(resp) is dict:
+            out["srcom"] = resp
+        games[data["game"]] = resp
     if out["srcom"]:
         if "records" in out["srcom"]:
             return out
@@ -108,35 +112,32 @@ def main():
         ts = dt.datetime.strptime(data["tracker"]["starttime"], "%Y-%m-%dT%H:%M:%SZ")
         data["ts"] = timegm(ts.utctimetuple())
         data["time"] = data["tracker"]["starttime"]
-        data["until"] = human(dt.datetime.now() - ts)
+        data["until"] = human(dt.datetime.utcnow() - ts)
         data["game"] = data["tracker"]["name"]
         data["runners"] = get_runners(data["tracker"]["runners"])
         template_extra = ") [\\[{}\\]](http://twitch.tv/videos/{}?t={}"
-        data["vod"] = ("http://twitch.tv/videos/{}?t={}".format(*vods[n][:2]) +
-                       (template_extra.format(2, *vods[n][2:4])
-                         if len(vods[n]) > 2 else "") +
-                       (template_extra.format(3, *vods[n][4:6])
-                         if len(vods[n]) > 4 else "")
-                    if len(vods) > n else "http://twitch.tv/gamesdonequick")
-#        data.update(get_srcom_info(data))
+        if len(vods) > n and len(vods[n]) > 0:
+            data["vod"] = "http://twitch.tv/videos/{}?t={}".format(*vods[n][:2]) + \
+                           (template_extra.format(2, *vods[n][2:4])
+                             if len(vods[n]) > 2 else "") + \
+                           (template_extra.format(3, *vods[n][4:6])
+                             if len(vods[n]) > 4 else "")
+        else:
+            data["vod"] = "http://twitch.tv/gamesdonequick"
+        data.update(get_srcom_info(data))
+        data["current"] = False
         if not out["current"] and "in " in data["until"]:
-            out["current"].update(data)
+            out["schedule"][-1]["current"] = True
+            out["current"].update(out["schedule"][-1])
         out["schedule"].append(data)
     out["schedule"].append({
         "game": "Finale!",
-        "vod": "http://twitch.tv/videos/{}?t={}".format(*vods[-1][:2]) if len(vods) > len(gdq_data) else out["info"]["twitch"],
+        "vod": "http://twitch.tv/videos/{}?t={}".format(*vods[-1][:2]) if len(vods[-1]) > 0 and len(vods) > len(gdq_data) else out["info"]["twitch"],
         "runTime": "forever",
+        "current": False,
         "runners": {"everyone": out["info"]["twitch"]}
     })
     out["current"]["donation"] = {"total": event["fields"]["amount"], "max": event["fields"]["max"], "avg": event["fields"]["avg"]}
-    try:
-        twitchd = get("https://api.twitch.tv/kraken/streams/gamesdonequick").json()["stream"]
-        if twitchd:
-            out["current"]["viewers"] = twitchd["viewers"]
-        else:
-            out["current"]["viewers"] = 0
-    except:
-        out["current"]["viewers"] = 0
     with open('schedule.json', 'w') as f:
         dump(out, f, indent=4)
     with open("srcomgames.json", "w") as f:

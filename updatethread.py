@@ -6,6 +6,6 @@ with open("/home/steven/gdqauth.json") as f:
 r.set_oauth_app_info(**auth["login"])
 r.set_access_credentials(**r.refresh_access_information(auth["token"]))
 
-post = r.get_submission("https://www.reddit.com/comments/6jd9qu")
+post = r.get_submission("https://www.reddit.com/comments/6kruja")
 with open("vods.md") as f:
     post.edit(f.read())

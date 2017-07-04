@@ -1,9 +1,13 @@
-all: schedule_json vod_thread updatethread
+thread: schedulejson vodthread updatethread
 
-schedule_json:
+getdata:
+	curl https://gamesdonequick.com/tracker/search/?type=runner -o runners.json
+	curl https://gamesdonequick.com/tracker/search/?type=event -o events.json
+
+schedulejson:
 	python3 schedule.py
 
-vod_thread:
+vodthread:
 	python3 genvods.py
 
 updatethread:
@@ -11,3 +15,6 @@ updatethread:
 
 requirements:
 	pip install -r requirements.txt
+
+vodjson:
+	python3 genjson.py
