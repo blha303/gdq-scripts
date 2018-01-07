@@ -17,8 +17,8 @@ header("Content-Type: text/html; charset=utf-8");
     <body>
         <p><code></code></p>
         <div class="toolbox">
-            <a href="//blha303.com.au/gdq/schedule.json">View source</a><br />
-            <a href="http://validator.w3.org/check?uri=https://blha303.com.au/gdq/">
+            <a href="//b303.me/gdq/schedule.json">View source</a><br />
+            <a href="http://validator.w3.org/check?uri=https://b303.me/gdq/">
             <img src="valid-xhtml10.png" alt="Valid XHTML 1.0 Strict" width="109" />
             </a><br />
             <a href="http://jsonview.com">With thanks to <img src="jv/jsonview16.png" alt="JSONView logo 16px" /></a><br />

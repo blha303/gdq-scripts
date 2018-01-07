@@ -1,11 +1,8 @@
-import praw, sys, json
-r = praw.Reddit('GDQ thread autoupdater by /u/suudo')
+#/var/www/html/gdq/newpraw/bin/python
+import praw, json
 with open("/home/steven/gdqauth.json") as f:
     auth = json.load(f)
+r = praw.Reddit(user_agent='GDQ thread autoupdater by /u/suudo', refresh_token=auth["token"], **auth["login"])
 
-r.set_oauth_app_info(**auth["login"])
-r.set_access_credentials(**r.refresh_access_information(auth["token"]))
-
-post = r.get_submission("https://www.reddit.com/comments/6kruja")
 with open("vods.md") as f:
-    post.edit(f.read())
+    r.submission("7oljmp").edit(f.read())

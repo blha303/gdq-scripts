@@ -1,20 +1,28 @@
 thread: schedulejson vodthread updatethread
 
-getdata:
+clean:
+	rm runners.json events.json
+
+runners.json:
 	curl https://gamesdonequick.com/tracker/search/?type=runner -o runners.json
+
+events.json:
 	curl https://gamesdonequick.com/tracker/search/?type=event -o events.json
 
-schedulejson:
+getdata: runners.json events.json
+
+schedulejson: getdata
 	python3 schedule.py
 
 vodthread:
 	python3 genvods.py
 
-updatethread:
-	python3 updatethread.py
+updatethread: newpraw
+	newpraw/bin/python updatethread.py
 
 requirements:
-	pip install -r requirements.txt
+	pip3 install -r requirements.txt
 
-vodjson:
-	python3 genjson.py
+newpraw:
+	virtualenv newpraw
+	newpraw/bin/pip install praw
