@@ -17,13 +17,13 @@ def get(*args, **kwargs):
     print(">> get({}, {})".format(repr(args), repr(kwargs)))
     return _get(*args, **kwargs)
 
-def load_json_from_reddit(subreddit, wikipage, orempty=False):
+def load_json_from_reddit(subreddit, wikipage, orempty=None):
     """Reads json from a reddit wiki page. Allows the use of # as a comment character"""
     try:
         page = r.subreddit(subreddit).wiki[wikipage].content_md.replace("\r\n", "\n")
     except NotFound:
         if orempty:
-            return {}
+            return orempty()
         raise
     wiki_data = "\n".join([line.partition("#")[0].rstrip() for line in page.split("\n")])
     return loads(wiki_data)
@@ -47,7 +47,7 @@ out = {"info": {"site": "http://gamesdonequick.com/schedule",
                 "vods": "https://b303.me/gdq/vods.md",
                 "vodthread": "https://redd.it/{}".format(variables["thread"]),
                 "slug": variables["slug"],
-                "header": "https://www.reddit.com/r/VODThread/wiki/gdqheader",
+                "header": "https://reddit.com/r/VODThread/wiki/gdqheader",
                 "twitch": "http://twitch.tv/gamesdonequick"},
        "current": {},
        "schedule": []
@@ -55,7 +55,8 @@ out = {"info": {"site": "http://gamesdonequick.com/schedule",
 
 vods = load_json_from_reddit("VODThread", out["info"]["slug"] + "vods")
 urls = load_json_from_reddit("VODThread", "gdqrunners")
-yt = load_json_from_reddit("VODThread", out["info"]["slug"] + "yt", orempty=True)
+yt = load_json_from_reddit("VODThread", out["info"]["slug"] + "yt", orempty=dict)
+donation_totals = load_json_from_reddit("VODThread", out["info"]["slug"] + "donations", orempty=list)
 with open("runners.json") as f:
     runners = {r["pk"]:r["fields"] for r in load(f)}
 with open("events.json") as f:
@@ -72,13 +73,13 @@ def get_runners(id_list):
     for id in id_list:
         if id in runners:
             out[runners[id]["name"]] = runners[id]["stream"].replace("htttp", "http") or \
-                ("https://www.youtube.com/user/{}".format(runners[id]["youtube"]) if runners[id]["youtube"] else "") or \
+                ("https://youtube.com/user/{}".format(runners[id]["youtube"]) if runners[id]["youtube"] else "") or \
                 ("https://twitter.com/{}".format(runners[id]["twitter"]) if runners[id]["twitter"] else "")
     return out
 
 def get_srcom_info(data):
     out = {}
-    api_url = "http://www.speedrun.com/api/v1"
+    api_url = "http://speedrun.com/api/v1"
     if data["game"] in games:
         out["srcom"] = games[data["game"]]
     elif "SETUP BLOCK" in data["game"]:
@@ -132,22 +133,19 @@ def main():
             data["yt"] = yt[n]
         else:
             data["yt"] = None
+        if len(donation_totals) > n and len(donation_totals[n]) > 0:
+            data["donation_total"] = donation_totals[n]
+        else:
+            data["donation_total"] = None
         data.update(get_srcom_info(data))
         data["current"] = False
         if not out["current"] and "in " in data["until"] and out["schedule"]:
             out["schedule"][-1]["current"] = True
             out["current"].update(out["schedule"][-1])
         out["schedule"].append(data)
-        with open("srcomgames.json", "w") as f:
-            dump(games, f)
-#    out["schedule"].append({
-#        "game": "Finale!",
-#        "vod": "http://twitch.tv/videos/{}?t={}".format(*vods[-1][:2]) if vods and len(vods[-1]) > 0 and len(vods) > len(gdq_data) else out["info"]["twitch"],
-#        "runTime": "*8760:00:00*",
-#        "current": False,
-#        "runners": {"everyone": out["info"]["twitch"]}
-#    })
-    out["current"]["donation"] = {"total": event["fields"]["amount"], "max": event["fields"]["max"], "avg": event["fields"]["avg"]}
+    with open("srcomgames.json", "w") as f:
+        dump(games, f)
+    out["current"]["donation"] = get("https://gamesdonequick.com/tracker/index/{}?json".format(variables["slug"])).json()
     with open('schedule.json', 'w') as f:
         dump(out, f, indent=4)
 

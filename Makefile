@@ -5,6 +5,7 @@ clean:
 
 runners.json:
 	curl https://gamesdonequick.com/tracker/search/?type=runner -o runners.json
+	sed -i 's/www\.//g' runners.json
 
 events.json:
 	curl https://gamesdonequick.com/tracker/search/?type=event -o events.json
