@@ -11,13 +11,16 @@ events.json:
 
 getdata: runners.json events.json
 
+vodjson: events.json
+	python3 vodjson.py
+
 schedulejson: getdata
-	python3 schedule.py
+	newpraw/bin/python schedule.py
 
 vodthread:
-	python3 genvods.py
+	newpraw/bin/python genvods.py
 
-updatethread: newpraw
+updatethread:
 	newpraw/bin/python updatethread.py
 
 requirements:

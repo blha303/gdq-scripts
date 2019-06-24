@@ -8,11 +8,11 @@ Setup
 
 Currently setting up automatic VOD thread updating is somewhat difficult, at least I'm assuming it is because I haven't had to do it from scratch before. The scripts use several reddit wiki pages as configuration and data input, this was so it could be easily crowd-sourced as I was losing interest in watching hours of video to update the thread myself. The wiki pages being accessed are:
 
-* [XgdqYYYYvods](https://reddit.com/r/suudo/wiki/agdq2017vods), a JSON list of value pairs representing a Twitch VOD url for each of the runs in the [schedule](https://gamesdonequick.com/schedule). This needs to be manually updated for each new year
-* ~~[gdqrunners](https://reddit.com/r/suudo/wiki/gdqrunners), a mapping of usernames to their video URLs. needed because most runners use a slightly different username on the schedule to what they use on twitch~~
+* [XgdqYYYYvods](https://reddit.com/r/VODThread/wiki/agdq2017vods), a JSON list of value pairs representing a Twitch VOD url for each of the runs in the [schedule](https://gamesdonequick.com/schedule). This needs to be manually updated for each new year
+* ~~[gdqrunners](https://reddit.com/r/VODThread/wiki/gdqrunners), a mapping of usernames to their video URLs. needed because most runners use a slightly different username on the schedule to what they use on twitch~~
   * No longer needed, https://gamesdonequick.com/tracker/search/?type=runner
-* [gdqvariables](https://www.reddit.com/r/suudo/wiki/gdqvariables), containing previously hard-coded values that are used in the creation of the vod thread. An initial effort at making the entire script configurable from reddit wiki pages
-* [gdqheader](https://www.reddit.com/r/suudo/wiki/gdqheader), text inserted at the top of the vod thread containing a brief statement from the author and relevant links
+* [gdqvariables](https://www.reddit.com/r/VODThread/wiki/gdqvariables), containing previously hard-coded values that are used in the creation of the vod thread. An initial effort at making the entire script configurable from reddit wiki pages
+* [gdqheader](https://www.reddit.com/r/VODThread/wiki/gdqheader), text inserted at the top of the vod thread containing a brief statement from the author and relevant links
 
 In addition, `schedule.py` needs a file named `srcomgames.json` containing, initialy, an empty list (`[]`); this then gets populated with cache data for the world record column in the vod thread. Also, `updatethread.py` needs to be updated with the URL to the thread to be updated. These functions are separated so any one of them can be skipped and old data used to save time in development. There is a Makefile included that can simplify file generation.
 

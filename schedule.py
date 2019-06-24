@@ -7,12 +7,11 @@ from ago import human
 from sys import exit
 
 import praw
-r = praw.Reddit('VOD loader by /u/suudo')
-with open("/home/steven/gdqauth.json") as f:
-    auth = load(f)
+from prawcore.exceptions import NotFound
 
-r.set_oauth_app_info(**auth["login"])
-r.set_access_credentials(**r.refresh_access_information(auth["token"]))
+with open("/home/steven/gdqauth.json") as f:
+  d = load(f)
+  r = praw.Reddit(user_agent="VOD loader by u/suudo", refresh_token=d["token"], **d["login"])
 
 def get(*args, **kwargs):
     print(">> get({}, {})".format(repr(args), repr(kwargs)))
@@ -21,8 +20,8 @@ def get(*args, **kwargs):
 def load_json_from_reddit(subreddit, wikipage, orempty=False):
     """Reads json from a reddit wiki page. Allows the use of # as a comment character"""
     try:
-        page = r.get_wiki_page(subreddit, wikipage).content_md.replace("\r\n", "\n")
-    except praw.errors.NotFound:
+        page = r.subreddit(subreddit).wiki[wikipage].content_md.replace("\r\n", "\n")
+    except NotFound:
         if orempty:
             return {}
         raise
@@ -34,7 +33,9 @@ def dump_json_to_reddit(data, subreddit, wikipage):
     :param data: Arbitrary data that json.dumps can interpret
     :param subreddit: Destination subreddit
     :param wikipage: Destination wikipage"""
-    return r.get_wiki_page(subreddit, wikipage).edit("\r\n".join("    "+l for l in json.dumps(data, indent=4).split("\n")))
+    return r.subreddit(subreddit).wiki[wikipage].edit("\r\n".join("    "+l for l in dumps(data, indent=4).split("\n")))
+
+variables = load_json_from_reddit("VODThread", "gdqvariables")
 
 out = {"info": {"site": "http://gamesdonequick.com/schedule",
                 "author": "blha303",
@@ -44,15 +45,17 @@ out = {"info": {"site": "http://gamesdonequick.com/schedule",
                 "script": "https://b303.me/gdq/schedule.py",
                 "raw": "https://b303.me/gdq/schedule.json",
                 "vods": "https://b303.me/gdq/vods.md",
-                "slug": "agdq2018",
-                "header": "https://www.reddit.com/r/suudo/wiki/gdqheader",
+                "vodthread": "https://redd.it/{}".format(variables["thread"]),
+                "slug": variables["slug"],
+                "header": "https://www.reddit.com/r/VODThread/wiki/gdqheader",
                 "twitch": "http://twitch.tv/gamesdonequick"},
        "current": {},
        "schedule": []
       }
 
-vods = load_json_from_reddit("suudo", out["info"]["slug"] + "vods")
-urls = load_json_from_reddit("suudo", "gdqrunners")
+vods = load_json_from_reddit("VODThread", out["info"]["slug"] + "vods")
+urls = load_json_from_reddit("VODThread", "gdqrunners")
+yt = load_json_from_reddit("VODThread", out["info"]["slug"] + "yt", orempty=True)
 with open("runners.json") as f:
     runners = {r["pk"]:r["fields"] for r in load(f)}
 with open("events.json") as f:
@@ -68,7 +71,7 @@ def get_runners(id_list):
     out = {}
     for id in id_list:
         if id in runners:
-            out[runners[id]["name"]] = runners[id]["stream"] or \
+            out[runners[id]["name"]] = runners[id]["stream"].replace("htttp", "http") or \
                 ("https://www.youtube.com/user/{}".format(runners[id]["youtube"]) if runners[id]["youtube"] else "") or \
                 ("https://twitter.com/{}".format(runners[id]["twitter"]) if runners[id]["twitter"] else "")
     return out
@@ -92,7 +95,7 @@ def get_srcom_info(data):
             out["srcom"] = resp
         games[data["game"]] = resp
     if out["srcom"]:
-        if "records" in out["srcom"]:
+        if "records" in out["srcom"] or not "categories" in out["srcom"]:
             return out
         out["srcom_category"] = out["srcom"]["categories"].get(data["category"])
         if out["srcom_category"]:
@@ -125,6 +128,10 @@ def main():
                              if len(vods[n]) > 4 else "")
         else:
             data["vod"] = "http://twitch.tv/gamesdonequick"
+        if len(yt) > n and len(yt[n]) > 0:
+            data["yt"] = yt[n]
+        else:
+            data["yt"] = None
         data.update(get_srcom_info(data))
         data["current"] = False
         if not out["current"] and "in " in data["until"] and out["schedule"]:
@@ -133,13 +140,13 @@ def main():
         out["schedule"].append(data)
         with open("srcomgames.json", "w") as f:
             dump(games, f)
-    out["schedule"].append({
-        "game": "Finale!",
-        "vod": "http://twitch.tv/videos/{}?t={}".format(*vods[-1][:2]) if vods and len(vods[-1]) > 0 and len(vods) > len(gdq_data) else out["info"]["twitch"],
-        "runTime": "forever",
-        "current": False,
-        "runners": {"everyone": out["info"]["twitch"]}
-    })
+#    out["schedule"].append({
+#        "game": "Finale!",
+#        "vod": "http://twitch.tv/videos/{}?t={}".format(*vods[-1][:2]) if vods and len(vods[-1]) > 0 and len(vods) > len(gdq_data) else out["info"]["twitch"],
+#        "runTime": "*8760:00:00*",
+#        "current": False,
+#        "runners": {"everyone": out["info"]["twitch"]}
+#    })
     out["current"]["donation"] = {"total": event["fields"]["amount"], "max": event["fields"]["max"], "avg": event["fields"]["avg"]}
     with open('schedule.json', 'w') as f:
         dump(out, f, indent=4)
