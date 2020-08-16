@@ -56,7 +56,10 @@ with open("gdqauth.json", "w") as f:
   * On line 3, change the path to gdqauth.json. Make sure it's not web accessible!
   * On line 9, change the URL to the active vod thread
 
+* Update r/vodthread wiki pages gdqheader and gdqvariables to contain the correct links, thread ID and slug. I'd suggest using a test thread on r/vodthread for the first run.
+
 * Run `make`. It should create `schedule.json` containing all data for creation of the vod thread, `vods.md` containing the actual text of the vod thread, and then push `vods.md` to the given reddit post.
+* Run `make genjson` to create XgdqYYYYvods, then edit the second to last line to remove the comma (TODO: fix that lol)
 
 Thanks
 ------

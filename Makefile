@@ -12,8 +12,8 @@ events.json:
 
 getdata: runners.json events.json
 
-vodjson: events.json
-	python3 vodjson.py
+genjson:
+	newpraw/bin/python genjson.py
 
 schedulejson: getdata
 	newpraw/bin/python schedule.py
