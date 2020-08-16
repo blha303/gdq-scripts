@@ -16,8 +16,8 @@ comments = []
 for d in data["schedule"]:
   while True:
     try:
-      _ = s.reply("""**[{}]({})** run by {}{}""".format(d["game"], d["vod"], ", ".join("[{}]({})".format(k,v) for k,v in d["runners"].items()), " [YT]({})".format(d["yt"]) if d["yt"] else "" ))
-    except praw.exceptions.APIException:
+      _ = s.reply("""**[{}]({})** run by {}{}""".format(d["game"], d["vod"], ", ".join("[{}]({})".format(k,v) for k,v in d["runners"].items()), " [YT]({})".format(d["yt"]) if d["yt"] and type(d["yt"]) is str else "" ))
+    except:
       traceback.print_exc()
       continue
     break

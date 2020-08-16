@@ -1,7 +1,7 @@
 thread: schedulejson vodthread updatethread
 
 clean:
-	rm runners.json events.json
+	rm runners.json events.json runnerscache.json
 
 runners.json:
 	curl https://gamesdonequick.com/tracker/search/?type=runner -o runners.json
@@ -28,5 +28,5 @@ requirements:
 	pip3 install -r requirements.txt
 
 newpraw:
-	virtualenv newpraw
+	virtualenv -p python3 newpraw
 	newpraw/bin/pip install praw

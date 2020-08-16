@@ -26,5 +26,7 @@ variables = load_json_from_reddit("VODThread", "gdqvariables")
 
 with open("vods.md") as f:
     d = f.read()
-    r.submission(variables["thread"]).edit(d)
-    r.subreddit("VODThread").wiki["{}vodbak".format(variables["slug"])].edit(d)
+    thread = r.submission(variables["thread"]).selftext
+    if thread != d:
+        r.submission(variables["thread"]).edit(d)
+        r.subreddit("VODThread").wiki["{}vodbak".format(variables["slug"])].edit(d)

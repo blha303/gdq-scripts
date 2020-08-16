@@ -4,18 +4,17 @@ with open("schedule.json") as f:
     schedule = load(f)
 
 import praw
-r = praw.Reddit('VOD loader by /u/suudo')
+import prawcore
 with open("/home/steven/gdqauth.json") as f:
     auth = load(f)
-r.set_oauth_app_info(**auth["login"])
-r.set_access_credentials(**r.refresh_access_information(auth["token"]))
+r = praw.Reddit(user_agent='VOD loader by /u/suudo', refresh_token=auth["token"], **auth["login"])
 
-page = r.get_wiki_page("VODThread", schedule["info"]["slug"] + "vods")
+page = r.subreddit("VODThread").wiki[schedule["info"]["slug"] + "vods"]
 try:
     _ = page.content_md
     if not _:
-        raise praw.errors.NotFound(None)
-except praw.errors.NotFound:
+        raise prawcore.exceptions.NotFound(None)
+except prawcore.exceptions.NotFound:
     page.edit("    [\n" + "\n".join("        [], # {}".format(x["game"]) for x in schedule["schedule"]) + "\n    ]")
     print("https://reddit.com/r/VODThread/wiki/{}vods".format(schedule["info"]["slug"]))
 

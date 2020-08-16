@@ -38,13 +38,13 @@ def dump_json_to_reddit(data, subreddit, wikipage):
 variables = load_json_from_reddit("VODThread", "gdqvariables")
 
 out = {"info": {"site": "http://gamesdonequick.com/schedule",
-                "author": "blha303",
-                "email": "stevensmith.ome+gdq@gmail.com",
+                "author": "alyssadev",
+                "email": "alyssa.dev.smith+gdq@gmail.com",
                 "timezone": "UTC/GMT",
                 "generated": [dt.datetime.utcnow().ctime(), timegm(dt.datetime.utcnow().utctimetuple())],
-                "script": "https://b303.me/gdq/schedule.py",
-                "raw": "https://b303.me/gdq/schedule.json",
-                "vods": "https://b303.me/gdq/vods.md",
+                "script": "https://b.suv.id.au/gdq/schedule.py",
+                "raw": "https://b.suv.id.au/gdq/schedule.json",
+                "vods": "https://b.suv.id.au/gdq/vods.md",
                 "vodthread": "https://redd.it/{}".format(variables["thread"]),
                 "slug": variables["slug"],
                 "header": "https://reddit.com/r/VODThread/wiki/gdqheader",
@@ -53,12 +53,16 @@ out = {"info": {"site": "http://gamesdonequick.com/schedule",
        "schedule": []
       }
 
-vods = load_json_from_reddit("VODThread", out["info"]["slug"] + "vods")
+vods = load_json_from_reddit("VODThread", out["info"]["slug"] + "vods", orempty=list)
 urls = load_json_from_reddit("VODThread", "gdqrunners")
 yt = load_json_from_reddit("VODThread", out["info"]["slug"] + "yt", orempty=dict)
 donation_totals = load_json_from_reddit("VODThread", out["info"]["slug"] + "donations", orempty=list)
-with open("runners.json") as f:
-    runners = {r["pk"]:r["fields"] for r in load(f)}
+try:
+    with open("runnerscache.json") as f:
+        runners = load(f)
+except:
+    with open("runners.json") as f:
+        runners = {str(r["pk"]):r["fields"] for r in load(f)}
 with open("events.json") as f:
     event = [e for e in load(f) if e["fields"]["short"] == out["info"]["slug"]][0]
 with open("srcomgames.json") as f:
@@ -68,13 +72,24 @@ def splitnames(strlist):
     tmp = strlist.replace(", ", ";").replace(" and ", ";").replace(" vs ", ";").replace(" vs. ", ";").replace(";and ", ";").replace(" or maybe ", ";").replace("/", ";").replace(" ", "_").strip().split(";")
     return [] if not tmp[0] else tmp
 
+def get_runner(id):
+    global runners
+    runner = get("https://gamesdonequick.com/tracker/search/?type=runner&id={}".format(id)).json()[0]
+    runners[str(id)] = runner["fields"]
+    with open("runnerscache.json", "w") as f:
+        dump(runners,f)
+    return runner["fields"]
+
 def get_runners(id_list):
     out = {}
     for id in id_list:
-        if id in runners:
-            out[runners[id]["name"]] = runners[id]["stream"].replace("htttp", "http") or \
-                ("https://youtube.com/user/{}".format(runners[id]["youtube"]) if runners[id]["youtube"] else "") or \
-                ("https://twitter.com/{}".format(runners[id]["twitter"]) if runners[id]["twitter"] else "")
+        if str(id) in runners:
+            data = runners[str(id)]
+        else:
+            data = get_runner(id)
+        out[data["name"]] = data["stream"].replace("htttp", "http") or \
+            ("https://youtube.com/user/{}".format(data["youtube"]) if data["youtube"] else "") or \
+            ("https://twitter.com/{}".format(data["twitter"]) if data["twitter"] else "")
     return out
 
 def get_srcom_info(data):
@@ -130,7 +145,12 @@ def main():
         else:
             data["vod"] = "http://twitch.tv/gamesdonequick"
         if len(yt) > n and len(yt[n]) > 0:
-            data["yt"] = yt[n]
+            if type(yt[n]) is list:
+                data["yt"] = "http://youtu.be/{}) [YT](http://youtu.be/".format(yt[n][0]) + ") [YT](http://youtu.be/".join(yt[n][1:])
+            else:
+                data["yt"] = "http://youtu.be/{}".format(yt[n])
+#        if len(yt) > n and len(yt[n]) > 0:
+#            data["yt"] = "http://youtu.be/" + yt[n]
         else:
             data["yt"] = None
         if len(donation_totals) > n and len(donation_totals[n]) > 0:
@@ -145,7 +165,7 @@ def main():
         out["schedule"].append(data)
     with open("srcomgames.json", "w") as f:
         dump(games, f)
-    out["current"]["donation"] = get("https://gamesdonequick.com/tracker/index/{}?json".format(variables["slug"])).json()
+    out["current"]["donation"] = get("https://gamesdonequick.com/tracker/event/{}?json".format(variables["slug"])).json()
     with open('schedule.json', 'w') as f:
         dump(out, f, indent=4)
 
