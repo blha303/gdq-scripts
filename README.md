@@ -1,7 +1,7 @@
 gdq-scripts
 ===========
 
-A collection of scripts that make the [GDQ VOD threads](https://www.reddit.com/r/speedrun/comments/5mq821/agdq_vod_thread_2017/) easier.
+A collection of scripts that make the [GDQ VOD threads](https://www.reddit.com/r/VODThread) easier.
 
 Setup
 -----
